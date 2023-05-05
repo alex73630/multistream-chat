@@ -9,7 +9,7 @@ export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
     TWITCH_CLIENT_ID: z.string().min(1),
-    TWITCH_CLIENT_SECRET: z.string().min(1),
+    TWITCH_CLIENT_SECRET: z.string().min(1)
   },
 
   /**
@@ -18,7 +18,8 @@ export const env = createEnv({
    * `NEXT_PUBLIC_`.
    */
   client: {
-    // NEXT_PUBLIC_CLIENTVAR: z.string().min(1),
+    // NEXT_PUBLIC_CLIENTVAR: z.string().min(1),,
+    NEXT_PUBLIC_YOUTUBE_SSE_CHAT: z.string().url()
   },
 
   /**
@@ -29,6 +30,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     TWITCH_CLIENT_ID: process.env.TWITCH_CLIENT_ID,
     TWITCH_CLIENT_SECRET: process.env.TWITCH_CLIENT_SECRET,
+    NEXT_PUBLIC_YOUTUBE_SSE_CHAT: process.env.NEXT_PUBLIC_YOUTUBE_SSE_CHAT
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
 });
