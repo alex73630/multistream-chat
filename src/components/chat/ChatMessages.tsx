@@ -22,7 +22,8 @@ export default function ChatMessages() {
 		target?.scroll({
 			// @ts-expect-error - scroll is not in the types
 			// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-			top: target.scrollHeight, behavior: "smooth"
+			top: target.scrollHeight,
+			behavior: "smooth"
 		})
 	}, [])
 

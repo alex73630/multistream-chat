@@ -3,14 +3,14 @@ import { type ChatItem, type MessageItem, type YoutubeId } from "youtube-chat/di
 import { Platform, useChatStore } from "../ChatStore"
 import { env } from "../../../env.mjs"
 
-export const useYouTubeChat = (youtubeId: YoutubeId | undefined | 'undefined') => {
+export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") => {
 	const [isConnected, setIsConnected] = useState(false)
 	const eventUrl = useMemo(() => {
 		const eventUrl = new URL(`${env.NEXT_PUBLIC_YOUTUBE_SSE_CHAT}/yt-chat`)
-		if (youtubeId === undefined || youtubeId === 'undefined') {
+		if (youtubeId === undefined || youtubeId === "undefined") {
 			return null
 		}
-		if ("handle" in youtubeId && youtubeId.handle === 'undefined') {
+		if ("handle" in youtubeId && youtubeId.handle === "undefined") {
 			return null
 		}
 		for (const [key, value] of Object.entries(youtubeId)) {
@@ -22,7 +22,7 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | 'undefined') =
 	const addMessage = useChatStore((state) => state.addMessage)
 
 	const youtubeChannel = useMemo<string>((): string => {
-		if (youtubeId === undefined || youtubeId === 'undefined') {
+		if (youtubeId === undefined || youtubeId === "undefined") {
 			return ""
 		}
 		if ("channelId" in youtubeId) {
@@ -42,7 +42,10 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | 'undefined') =
 		let currEvents = events
 		if (eventUrl !== null) {
 			console.log(eventUrl.toString(), eventUrl.toString().includes("handle=undefined"))
-			if ((currEvents === null || currEvents.url !== eventUrl.toString()) && !eventUrl.toString().includes("handle=undefined")) {
+			if (
+				(currEvents === null || currEvents.url !== eventUrl.toString()) &&
+				!eventUrl.toString().includes("handle=undefined")
+			) {
 				if (currEvents !== null) {
 					currEvents.close()
 				}
@@ -84,7 +87,6 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | 'undefined') =
 				}
 			}
 		}
-
 	}, [eventUrl, events, addMessage, youtubeChannel])
 
 	return { isConnected }
