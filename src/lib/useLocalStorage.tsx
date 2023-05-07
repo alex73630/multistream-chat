@@ -8,7 +8,7 @@ function useLocalStorage<T = string>(key: string, initialValue: T): [T, Dispatch
 			const value = window.localStorage.getItem(key)
 			// Check if the local storage already has any values,
 			// otherwise initialize it with the passed initialValue
-			const parsedValue: T = value ? JSON.parse(value) as T : initialValue
+			const parsedValue: T = value ? (JSON.parse(value) as T) : initialValue
 
 			return parsedValue
 		} catch (error) {
@@ -19,7 +19,7 @@ function useLocalStorage<T = string>(key: string, initialValue: T): [T, Dispatch
 		}
 	})
 
-	const setValue: Dispatch<SetStateAction<T>> = value => {
+	const setValue: Dispatch<SetStateAction<T>> = (value) => {
 		try {
 			// If the passed value is a callback function,
 			//  then call it with the existing state.

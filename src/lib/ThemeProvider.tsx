@@ -1,16 +1,24 @@
 "use client"
 
-import { type FunctionComponent, type ReactElement, createContext, useEffect, useContext } from "react";
-import useLocalStorage from "./useLocalStorage";
-import { getCurrentMode } from "./dark-mode";
+import { type FunctionComponent, type ReactElement, createContext, useEffect, useContext } from "react"
+import useLocalStorage from "./useLocalStorage"
+import { getCurrentMode } from "./dark-mode"
 
 export interface ThemeContextProps {
-	theme: "light" | "dark";
-	setTheme: (theme: "light" | "dark") => void;
-	switchTheme: () => void;
+	theme: "light" | "dark"
+	setTheme: (theme: "light" | "dark") => void
+	switchTheme: () => void
 }
 
-export const ThemeContext = createContext<ThemeContextProps>({ theme: "light", setTheme: () => { return "light" }, switchTheme: () => { return "light" } })
+export const ThemeContext = createContext<ThemeContextProps>({
+	theme: "light",
+	setTheme: () => {
+		return "light"
+	},
+	switchTheme: () => {
+		return "light"
+	}
+})
 
 export const ThemeProvider: FunctionComponent<{ children: ReactElement | ReactElement[] }> = ({ children }) => {
 	const defaultTheme = getCurrentMode()
@@ -26,11 +34,7 @@ export const ThemeProvider: FunctionComponent<{ children: ReactElement | ReactEl
 		setTheme(theme === "light" ? "dark" : "light")
 	}
 
-	return (
-		<ThemeContext.Provider value={{ theme, setTheme, switchTheme }}>
-			{children}
-		</ThemeContext.Provider>
-	)
+	return <ThemeContext.Provider value={{ theme, setTheme, switchTheme }}>{children}</ThemeContext.Provider>
 }
 
 export const useTheme = () => {

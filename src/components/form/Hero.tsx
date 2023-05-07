@@ -2,9 +2,12 @@ export default function Hero() {
 	return (
 		<div className="px-6 py-16 sm:py-16 lg:px-8">
 			<div className="mx-auto max-w-2xl text-center">
-				<h2 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">All your chat in one, with no compromises</h2>
+				<h2 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl">
+					All your chat in one, with no compromises
+				</h2>
 				<p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
-					Get your Twitch and YouTube chat in the same overlay or window with support for emotes (including custom and animated), custom username color and badges.
+					Get your Twitch and YouTube chat in the same overlay or window with support for emotes (including
+					custom and animated), custom username color and badges.
 				</p>
 				<div className="mt-10 flex items-center justify-center gap-x-6">
 					<a
