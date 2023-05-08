@@ -29,6 +29,6 @@ export function ensureContrast(textColor: string, bgColor: string): string {
 		])
 
 		// Return the color with the better contrast ratio
-		return bestColor.toString({ format: "hex" })
+		return bestColor.to("srgb").toString({ format: "hex" })
 	}
 }
