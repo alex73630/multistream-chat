@@ -19,12 +19,28 @@ export default function ChatMessage({ message, emotes, badges }: ChatMessageProp
 				if (!data) {
 					continue
 				}
+				let badgeUrl: {
+					url: string
+					width: number
+					height: number
+				}
+
+				if (data.url.x4) {
+					badgeUrl = data.url.x4
+				} else if (data.url.x2) {
+					badgeUrl = data.url.x2
+				} else if (data.url.x1) {
+					badgeUrl = data.url.x1
+				} else {
+					continue
+				}
+
 				badgesElems.push(
 					<ChatBadge
 						key={data.id}
 						platform={message.platform}
 						size="small"
-						image={data.url.x2?.url as string}
+						image={badgeUrl.url}
 					/>
 				)
 			}

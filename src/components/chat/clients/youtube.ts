@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { type ChatItem, type MessageItem, type YoutubeId } from "youtube-chat/dist/types/data"
-import { type Emote, EmoteSource, Platform, useChatStore } from "../ChatStore"
+import { type Emote, EmoteSource, Platform, useChatStore, type Badge, BadgeSource } from "../ChatStore"
 import { env } from "../../../env.mjs"
 import { getRandomUsernameColor } from "../chat-utils"
 
 export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") => {
 	const [isConnected, setIsConnected] = useState(false)
-	const [emotes, addEmotes] = useChatStore((state) => [state.emotes, state.addEmotes, state.badges, state.addBadges])
+	const [emotes, addEmotes, badges, addBadges] = useChatStore((state) => [state.emotes, state.addEmotes, state.badges, state.addBadges])
 	const eventUrl = useMemo(() => {
 		const eventUrl = new URL(`${env.NEXT_PUBLIC_YOUTUBE_SSE_CHAT}/yt-chat`)
 		if (youtubeId === undefined || youtubeId === "undefined") {
@@ -128,10 +128,94 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 		[emotes, addEmotes, youtubeChannel]
 	)
 
+	const parseBadges = useCallback(
+		(message: ChatItem) => {
+			const badgesToAdd: Badge[] = []
+			const parsedBadges: string[] = []
+
+			if (message.isOwner) {
+				const found = badges.find((b) => b.id === "owner" && b.platform === Platform.YouTube)
+				if (!found) {
+					badgesToAdd.push({
+						id: "youtube-owner",
+						name: "Owner",
+						platform: Platform.YouTube,
+						source: BadgeSource.YouTube,
+						bucket: "global",
+						channel: null,
+						url: {
+							x1: null,
+							x2: null,
+							x4: {
+								url: "/badges/youtube/owner.png",
+								width: 64,
+								height: 64
+							}
+						}
+					})
+				}
+				parsedBadges.push("youtube-owner")
+			}
+
+			if (message.isModerator) {
+				const found = badges.find((b) => b.id === "moderator" && b.platform === Platform.YouTube)
+				if (!found) {
+					badgesToAdd.push({
+						id: "youtube-moderator",
+						name: "Moderator",
+						platform: Platform.YouTube,
+						source: BadgeSource.YouTube,
+						bucket: "global",
+						channel: null,
+						url: {
+							x1: null,
+							x2: null,
+							x4: {
+								url: "/badges/youtube/mod.png",
+								width: 64,
+								height: 64
+							}
+						}
+					})
+				}
+				parsedBadges.push("youtube-moderator")
+			}
+
+			if (message.isMembership) {
+				const membershipId = Buffer.from(`${youtubeChannel}-${message.author.badge?.label as string}`).toString("base64")
+				const found = badges.find((b) => b.id === membershipId && b.platform === Platform.YouTube)
+				if (!found) {
+					badgesToAdd.push({
+						id: membershipId,
+						name: message.author.badge?.label as string,
+						platform: Platform.YouTube,
+						source: BadgeSource.YouTube,
+						bucket: "channel",
+						channel: youtubeChannel,
+						url: {
+							x1: null,
+							x2: null,
+							x4: {
+								url: message.author.badge?.thumbnail.url as string,
+								width: 64,
+								height: 64
+							}
+						}
+					})
+				}
+				parsedBadges.push(membershipId)
+			}
+
+			if (badgesToAdd.length > 0) {
+				addBadges(badgesToAdd)
+			}
+			return parsedBadges
+		}, [addBadges, badges, youtubeChannel])
+
 	const [events, setEvents] = useState<EventSource | null>(() => null)
 	useEffect(() => {
 		let currEvents = events
-		if (eventUrl !== null) {
+		if (eventUrl !== null && !!youtubeChannel) {
 			if (
 				(currEvents === null || currEvents.url !== eventUrl.toString()) &&
 				!eventUrl.toString().includes("handle=undefined")
@@ -174,7 +258,7 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 									name: parsedData.author.name,
 									platform: Platform.YouTube,
 									color: randomColor(parsedData.author.channelId),
-									badges: []
+									badges: parseBadges(parsedData),
 								},
 								emotes: parseEmotes(parsedData),
 								timestamp: new Date(parsedData.timestamp).getTime()
@@ -186,7 +270,7 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 				}
 			}
 		}
-	}, [eventUrl, events, addMessage, youtubeChannel, randomColor, parseEmotes])
+	}, [eventUrl, events, addMessage, youtubeChannel, randomColor, parseEmotes, parseBadges])
 
 	return { isConnected }
 }
