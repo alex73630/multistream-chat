@@ -4,6 +4,7 @@ import { EmoteSource, Platform, useChatStore } from "../ChatStore"
 import { parseChatMessage } from "@twurple/common"
 import { useTheme } from "../../../lib/ThemeProvider"
 import { api } from "../../../utils/api"
+import { ensureContrast } from "../chat-utils"
 
 export const useTwitchChat = (channel: string) => {
 	const { theme } = useTheme()
@@ -179,6 +180,12 @@ export const useTwitchChat = (channel: string) => {
 
 		client.onMessage((channel, user, message, msg) => {
 			const timestamp = new Date().getTime()
+
+			const userColor =
+				typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
+					? randomColor(user)
+					: msg.userInfo.color
+
 			addMessage({
 				id: msg.id,
 				platform: Platform.Twitch,
@@ -186,14 +193,13 @@ export const useTwitchChat = (channel: string) => {
 				text: message,
 				user: {
 					id: msg.userInfo.userId,
-					name: user,
+					name: msg.userInfo.displayName,
 					platform: Platform.Twitch,
-					color: msg.userInfo.color ?? randomColor(user),
+					color: ensureContrast(userColor, theme === "light" ? "#e9f6fe" : "#10182d"),
 					badges: Array.from(msg.userInfo.badges ?? [])
 						.map(([id, version]) => {
 							let badgeId = `${id}-${channel.slice(1)}-${version}`
 							let badge = badges.find((b) => b.id === badgeId)
-							console.log(badgeId, badge)
 							if (!badge) {
 								badgeId = `${id}-${version}`
 								badge = badges.find((b) => b.id === badgeId)
@@ -208,9 +214,6 @@ export const useTwitchChat = (channel: string) => {
 				emotes: parseEmotes(message, msg.emoteOffsets),
 				timestamp: timestamp
 			})
-			if (msg.userInfo.badges) {
-				console.log(msg.userInfo.badges, msg.userInfo.badgeInfo)
-			}
 		})
 
 		setConnecting(true)
@@ -219,7 +222,7 @@ export const useTwitchChat = (channel: string) => {
 		return () => {
 			client?.quit()
 		}
-	}, [channel, addMessage, randomColor, parseEmotes, badges])
+	}, [channel, addMessage, randomColor, parseEmotes, badges, theme])
 
 	return { isConnected }
 }

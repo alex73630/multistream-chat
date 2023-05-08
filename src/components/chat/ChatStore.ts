@@ -122,7 +122,7 @@ export const useChatStore = create<ChatStore>()((set) => ({
 	emotes: [],
 	addMessage: (message) =>
 		set((state) => {
-			if (state.messages.length >= 200) {
+			if (state.messages.length >= 100) {
 				state.messages.shift()
 			}
 			return { messages: [...state.messages, message] }
