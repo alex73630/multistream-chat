@@ -11,6 +11,7 @@
 		"start": "next start"
 	},
 	"dependencies": {
+		"@d-fischer/typed-event-emitter": "^3.3.1",
 		"@heroicons/react": "^2.0.17",
 		"@radix-ui/react-checkbox": "^1.0.3",
 		"@radix-ui/react-label": "^2.0.1",
@@ -25,6 +26,8 @@
 		"@trpc/next": "^10.25.0",
 		"@trpc/react-query": "^10.25.0",
 		"@trpc/server": "^10.25.0",
+		"@ts-rest/core": "^3.19.4",
+		"@ts-rest/react-query": "^3.19.4",
 		"@twurple/api": "^6.2.0",
 		"@twurple/auth": "^6.2.0",
 		"@twurple/chat": "^6.2.0",
