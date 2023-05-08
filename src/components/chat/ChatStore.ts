@@ -122,6 +122,9 @@ export const useChatStore = create<ChatStore>()((set) => ({
 	emotes: [],
 	addMessage: (message) =>
 		set((state) => {
+			if (state.messages.some((m) => m.id === message.id)) {
+				return state
+			}
 			if (state.messages.length >= 100) {
 				state.messages.shift()
 			}
@@ -135,12 +138,17 @@ export const useChatStore = create<ChatStore>()((set) => ({
 	clearMessages: () => set(() => ({ messages: [] })),
 	addBadge: (badge) =>
 		set((state) => {
-			state.badges.push(badge)
+			if (!state.badges.some((b) => b.id === badge.id && b.source === badge.source)) {
+				state.badges.push(badge)
+			}
 			return { badges: [...state.badges] }
 		}),
 	addBadges: (badges) =>
 		set((state) => {
-			state.badges.push(...badges)
+			const toAdd = badges.filter(
+				(badge) => !state.badges.some((b) => b.id === badge.id && b.source === badge.source)
+			)
+			state.badges.push(...toAdd)
 			return { badges: [...state.badges] }
 		}),
 	addEmote: (emote) =>

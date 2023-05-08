@@ -1,5 +1,5 @@
 import { ChatClient } from "@twurple/chat"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { EmoteSource, Platform, useChatStore } from "../ChatStore"
 import { parseChatMessage } from "@twurple/common"
 import { useTheme } from "../../../lib/ThemeProvider"
@@ -150,8 +150,6 @@ export const useTwitchChat = (channel: string) => {
 			.filter((b) => b !== null) as string[]
 	}, [badges, twitchChannel])
 
-	const [isConnected, setIsConnected] = useState(false)
-
 	const addMessage = useChatStore((state) => state.addMessage)
 
 	const handleMessages = useCallback((channel: string, user: string, message: string, msg: TwitchPrivateMessage) => {
@@ -193,13 +191,6 @@ export const useTwitchChat = (channel: string) => {
 			})
 		}
 
-		if (listenerRef.current) {
-			clientRef.current.removeListener(listenerRef.current)
-		}
-		listenerRef.current = clientRef.current.onMessage(
-			handleMessages
-		)
-
 		if (clientRef.current) {
 			const currClient = clientRef.current
 			console.log(currClient.currentChannels, twitchChannel)
@@ -210,13 +201,36 @@ export const useTwitchChat = (channel: string) => {
 			if (!currClient.isConnected && !currClient.isConnecting) {
 				void currClient.connect()
 			}
-
-			return () => {
-				currClient?.quit()
-			}
 		}
 
-	}, [twitchChannel, clientRef, listenerRef, handleMessages])
+	}, [twitchChannel, clientRef, listenerRef])
 
-	return { isConnected }
+
+	useEffect(() => {
+		if (clientRef.current) {
+			if (listenerRef.current) {
+			clientRef.current.removeListener(listenerRef.current)
+			}
+			listenerRef.current = clientRef.current.onMessage(
+				handleMessages
+			)
+		}
+	}, [handleMessages])
+
+	useEffect(() => {
+		return () => {
+			if (clientRef.current) {
+				clientRef.current.quit()
+				if (listenerRef.current) {
+					clientRef.current.removeListener(listenerRef.current)
+					listenerRef.current = undefined
+				}
+				clientRef.current = undefined
+			}
+		}
+	}, [clientRef])
+
+	return {
+		isConnected: clientRef.current?.isConnected ?? false,
+	}
 }
