@@ -40,7 +40,7 @@ export default function ChatBadge(props: Props) {
 				alt="Chat Badge"
 				height={calculatedSize}
 				width={calculatedSize}
-				className="inline rounded mr-1"
+				className="mr-1 inline rounded"
 			/>
 		)
 	}
@@ -54,7 +54,7 @@ export default function ChatBadge(props: Props) {
 					alt="Twitch Chat Badge"
 					height={calculatedSize}
 					width={calculatedSize}
-					className="inline rounded mr-1"
+					className="mr-1 inline rounded"
 				/>
 			)
 		case Platform.YouTube:
@@ -65,7 +65,7 @@ export default function ChatBadge(props: Props) {
 					alt="YouTube Chat Badge"
 					height={calculatedSize}
 					width={calculatedSize}
-					className="inline rounded mr-1"
+					className="mr-1 inline rounded"
 				/>
 			)
 	}
