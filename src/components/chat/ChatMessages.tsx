@@ -73,7 +73,7 @@ function ChatMessages(props: ChatMessageProps) {
 					alt={emoteText}
 					width={28}
 					height={28}
-					className="inline h-6 px-1 leading-6"
+					className="inline mx-1 leading-6"
 				/>
 			)
 			parsedText.push(msg.text.substring(currentIndex, start))
