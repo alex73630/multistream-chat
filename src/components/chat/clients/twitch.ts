@@ -191,8 +191,9 @@ export const useTwitchChat = (channel: string) => {
 					color: msg.userInfo.color ?? randomColor(user),
 					badges: Array.from(msg.userInfo.badges ?? [])
 						.map(([id, version]) => {
-							let badgeId = `${id}-${channel}-${version}`
+							let badgeId = `${id}-${channel.slice(1)}-${version}`
 							let badge = badges.find((b) => b.id === badgeId)
+							console.log(badgeId, badge)
 							if (!badge) {
 								badgeId = `${id}-${version}`
 								badge = badges.find((b) => b.id === badgeId)
@@ -208,7 +209,7 @@ export const useTwitchChat = (channel: string) => {
 				timestamp: timestamp
 			})
 			if (msg.userInfo.badges) {
-				console.log(msg.userInfo.badges, msg.userInfo)
+				console.log(msg.userInfo.badges, msg.userInfo.badgeInfo)
 			}
 		})
 
