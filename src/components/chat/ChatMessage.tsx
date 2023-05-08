@@ -15,7 +15,7 @@ export default function ChatMessage({ message, emotes, badges }: ChatMessageProp
 
 		if (message.user.badges) {
 			for (const badge of message.user.badges) {
-				const data = badges.find((b) => b.id === badge)
+				const data = badges.find((b) => b.id === badge && b.platform === message.platform)
 				if (!data) {
 					continue
 				}
@@ -42,7 +42,7 @@ export default function ChatMessage({ message, emotes, badges }: ChatMessageProp
 		let currentIndex = 0
 		const parsedText = []
 		for (const emote of message.emotes) {
-			const data = emotes.find((e) => e.id === emote.id)
+			const data = emotes.find((e) => e.id === emote.id && e.platform === message.platform)
 			if (!data) {
 				continue
 			}
@@ -81,7 +81,7 @@ export default function ChatMessage({ message, emotes, badges }: ChatMessageProp
 		}
 		parsedText.push(message.text.substring(currentIndex).trimEnd())
 		return parsedText
-	}, [message.emotes, message.text, emotes])
+	}, [message.emotes, message.text, emotes, message.platform])
 
 	return (
 		<div className="my-2 items-center text-black dark:text-white">

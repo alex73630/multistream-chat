@@ -87,7 +87,7 @@ export const useTwitchChat = (channel: string) => {
 						index: [emote.position, emote.position + emote.length]
 					})
 
-					if (!emotes.find((e) => e.id === emote.id)) {
+					if (!emotes.find((e) => e.id === emote.id && e.platform === Platform.Twitch)) {
 						addEmotes([
 							{
 								id: emote.id,
@@ -174,10 +174,10 @@ export const useTwitchChat = (channel: string) => {
 					badges: Array.from(msg.userInfo.badges ?? [])
 						.map(([id, version]) => {
 							let badgeId = `${id}-${channel.slice(1)}-${version}`
-							let badge = badges.find((b) => b.id === badgeId)
+							let badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
 							if (!badge) {
 								badgeId = `${id}-${version}`
-								badge = badges.find((b) => b.id === badgeId)
+								badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
 								if (!badge) {
 									return null
 								}
