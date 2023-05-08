@@ -3,13 +3,14 @@ import { useCallback, useEffect, useRef } from "react"
 import { type Message } from "./ChatStore"
 import ChatBadge from "./ChatBadge"
 import Image from "next/image"
+import dynamic from "next/dynamic"
 
 interface ChatMessageProps {
 	preview?: boolean
 	messages?: Message[]
 }
 
-export default function ChatMessages(props: ChatMessageProps) {
+function ChatMessages(props: ChatMessageProps) {
 	const [messages, emotes, badges] = useChatStore((state) => [state.messages, state.emotes, state.badges])
 
 	const renderBadges = (platform: Platform, user: ChatUser) => {
@@ -97,3 +98,7 @@ export default function ChatMessages(props: ChatMessageProps) {
 		</div>
 	)
 }
+
+export default dynamic(() => Promise.resolve(ChatMessages), {
+	ssr: false
+})
