@@ -5,17 +5,24 @@ import ChatBubbleLeftRight from "@heroicons/react/24/outline/ChatBubbleLeftRight
 import { useTheme } from "../../lib/ThemeProvider"
 import SunIcon from "@heroicons/react/24/outline/SunIcon"
 import MoonIcon from "@heroicons/react/24/outline/MoonIcon"
+import Link from "next/link"
 
-const navigation = [
-	{ name: 'Chat', href: '/dashboard/chat', current: true },
-	{ name: 'Youtube', href: '/dashboard/youtube', current: false }
-]
+interface NavigationItem {
+	name: string,
+	href: string,
+	current: boolean
+}
+
+export interface DashboardLayoutProps {
+	navigation: NavigationItem[];
+	children: React.ReactNode;
+}
 
 function classNames(...classes: string[]) {
 	return classes.filter(Boolean).join(' ')
 }
 
-export default function DashboardLayout() {
+export default function DashboardLayout({ navigation, children }: DashboardLayoutProps) {
 	const { theme, switchTheme } = useTheme()
 	return (
 		<>
@@ -37,19 +44,20 @@ export default function DashboardLayout() {
 										</div>
 										<div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
 											{navigation.map((item) => (
-												<a
-													key={item.name}
-													href={item.href}
-													className={classNames(
-														item.current
-															? 'border-sky-600 text-gray-900 dark:text-white'
-															: 'border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700',
-														'inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium'
-													)}
-													aria-current={item.current ? 'page' : undefined}
-												>
-													{item.name}
-												</a>
+												<Link href={item.href} key={item.name} legacyBehavior>
+													<a
+														key={item.name}
+														className={classNames(
+															item.current
+																? 'border-sky-600 text-gray-900 dark:text-white'
+																: 'border-transparent text-gray-500 dark:text-gray-300 hover:border-gray-300 hover:text-gray-700',
+															'inline-flex items-center border-b-2 px-1 pt-1 text-sm font-medium'
+														)}
+														aria-current={item.current ? 'page' : undefined}
+													>
+														{item.name}
+													</a>
+												</Link>
 											))}
 										</div>
 									</div>
@@ -127,14 +135,7 @@ export default function DashboardLayout() {
 				</Disclosure>
 
 				<div className="py-10">
-					<header>
-						<div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-							<h1 className="text-3xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">Dashboard</h1>
-						</div>
-					</header>
-					<main>
-						<div className="mx-auto max-w-7xl sm:px-6 lg:px-8">{/* Your content */}</div>
-					</main>
+					{children}
 				</div>
 			</div>
 		</>
