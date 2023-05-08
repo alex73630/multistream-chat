@@ -1,7 +1,9 @@
 import { type NextPage } from "next"
 import Head from "next/head"
-import Hero from "../components/form/Hero"
-import Header from "../components/form/Header"
+import Hero from "../components/homepage/Hero"
+import Header from "../components/homepage/Header"
+import Features from "../components/homepage/Features"
+import Form from "../components/homepage/Form"
 
 const Home: NextPage = () => {
 	return (
@@ -12,8 +14,10 @@ const Home: NextPage = () => {
 				<link rel="icon" href="/favicon.ico" />
 			</Head>
 			<Header />
-			<main className="flex min-h-screen flex-col items-center">
+			<main className="flex flex-col items-center">
 				<Hero />
+				<Features />
+				<Form />
 			</main>
 		</>
 	)

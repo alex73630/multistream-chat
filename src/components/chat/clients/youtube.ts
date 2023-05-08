@@ -41,7 +41,6 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 	useEffect(() => {
 		let currEvents = events
 		if (eventUrl !== null) {
-			console.log(eventUrl.toString(), eventUrl.toString().includes("handle=undefined"))
 			if (
 				(currEvents === null || currEvents.url !== eventUrl.toString()) &&
 				!eventUrl.toString().includes("handle=undefined")
@@ -77,7 +76,14 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 										}
 									})
 									.join(" "),
-								user: parsedData.author.name,
+								user: {
+									id: parsedData.author.channelId,
+									name: parsedData.author.name,
+									platform: Platform.YouTube,
+									color: "#ff0000",
+									badges: []
+								},
+								emotes: [],
 								timestamp: new Date(parsedData.timestamp).getTime()
 							})
 						}

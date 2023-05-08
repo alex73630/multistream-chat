@@ -2,25 +2,38 @@ import { useRouter } from "next/router"
 import { useTwitchChat } from "./clients/twitch"
 import { useYouTubeChat } from "./clients/youtube"
 import dynamic from "next/dynamic"
-import { useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import ChatMessages from "./ChatMessages"
 
 function ChatComponent() {
 	const router = useRouter()
-	const youtubeId = useMemo(() => ({ handle: router.query.youtube as string }), [router.query])
-	useYouTubeChat(youtubeId)
-	useTwitchChat(router.query.twitch as string)
+	const config = useMemo(() => {
+		const { theme, overlay, youtube, twitch } = router.query
+		return {
+			theme: theme as string,
+			overlay: overlay === "true",
+			youtube: youtube as string,
+			twitch: twitch as string
+		}
+	}, [router.query])
+	useYouTubeChat({ handle: config.youtube })
+	useTwitchChat(config.twitch)
 
-	if (typeof router.query.youtube !== "string") {
-		return <div>Invalid YouTube handle</div>
-	}
+	useEffect(() => {
+		if (router.query.overlay === "true") {
+			const bgClasses = Array.from(document.body.classList).filter((c) => c.includes("bg-"))
+			bgClasses.forEach((c) => document.body.classList.remove(c))
 
-	if (typeof router.query.twitch !== "string") {
-		return <div>Invalid Twitch handle</div>
+			document.body.classList.add("bg-transparent")
+		}
+	}, [router.query])
+
+	if (typeof router.query.youtube !== "string" && typeof router.query.twitch !== "string") {
+		return <div>No chat provider setup</div>
 	}
 
 	return (
-		<div className="flex h-screen w-screen flex-col">
+		<div className={"flex h-screen w-screen flex-col"}>
 			<ChatMessages />
 		</div>
 	)

@@ -36,7 +36,11 @@ export interface Message {
 	channel: string
 	platform: Platform
 	timestamp: number
-	user: string
+	user: ChatUser
+	emotes: {
+		id: string
+		index: [number, number]
+	}[]
 	text: string
 }
 
@@ -64,7 +68,7 @@ export interface Emote {
 	bucket: "global" | "channel"
 	channel: string | null
 	source: EmoteSource
-	type: "static" | "animated"
+	type: "static" | "animated" | "default"
 	meta: {
 		zeroWidth: boolean
 		isEffect: boolean
@@ -73,6 +77,7 @@ export interface Emote {
 
 export interface Badge {
 	id: string
+	setId?: string
 	name: string
 	url: {
 		x1: {

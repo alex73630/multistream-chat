@@ -3,6 +3,7 @@
 import { type FunctionComponent, type ReactElement, createContext, useEffect, useContext } from "react"
 import useLocalStorage from "./useLocalStorage"
 import { getCurrentMode } from "./dark-mode"
+import { useRouter } from "next/router"
 
 export interface ThemeContextProps {
 	theme: "light" | "dark"
@@ -21,14 +22,27 @@ export const ThemeContext = createContext<ThemeContextProps>({
 })
 
 export const ThemeProvider: FunctionComponent<{ children: ReactElement | ReactElement[] }> = ({ children }) => {
-	const defaultTheme = getCurrentMode()
-	const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", defaultTheme)
+	const router = useRouter()
+	const [theme, setTheme] = useLocalStorage<"light" | "dark">("theme", "light")
 
+	useEffect(() => {
+		const defaultTheme = getCurrentMode()
+		if (defaultTheme === "dark") {
+			setTheme("dark", false)
+		}
+	})
 	useEffect(() => {
 		const root = window.document.documentElement
 		root.classList.remove("light", "dark")
 		root.classList.add(theme)
 	}, [theme])
+
+	useEffect(() => {
+		const { theme: queryTheme } = router.query
+		if (queryTheme === "light" || queryTheme === "dark") {
+			setTheme(queryTheme, false)
+		}
+	}, [router.query, setTheme])
 
 	const switchTheme = () => {
 		setTheme(theme === "light" ? "dark" : "light")
