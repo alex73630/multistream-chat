@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { type ChatItem, type MessageItem, type YoutubeId } from "youtube-chat/dist/types/data"
 import { Platform, useChatStore } from "../ChatStore"
 import { env } from "../../../env.mjs"
+import { getRandomUsernameColor } from "../chat-utils"
 
 export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") => {
 	const [isConnected, setIsConnected] = useState(false)
@@ -36,6 +37,15 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 		}
 		return ""
 	}, [youtubeId])
+
+	const randomColorsList = useMemo(() => new Map<string, string>(), [])
+
+	const randomColor = useCallback(
+		(username: string): string => {
+			return getRandomUsernameColor(username, randomColorsList)
+		},
+		[randomColorsList]
+	)
 
 	const [events, setEvents] = useState<EventSource | null>(() => null)
 	useEffect(() => {
@@ -80,7 +90,7 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 									id: parsedData.author.channelId,
 									name: parsedData.author.name,
 									platform: Platform.YouTube,
-									color: "#ff0000",
+									color: randomColor(parsedData.author.channelId),
 									badges: []
 								},
 								emotes: [],
@@ -93,7 +103,7 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 				}
 			}
 		}
-	}, [eventUrl, events, addMessage, youtubeChannel])
+	}, [eventUrl, events, addMessage, youtubeChannel, randomColor])
 
 	return { isConnected }
 }

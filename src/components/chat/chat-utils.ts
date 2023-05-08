@@ -32,3 +32,30 @@ export function ensureContrast(textColor: string, bgColor: string): string {
 		return bestColor.to("srgb").toString({ format: "hex" })
 	}
 }
+
+const usernameColors = [
+	"#ff0000",
+	"#0000ff",
+	"#008000",
+	"#b22222",
+	"#ff7f50",
+	"#9acd32",
+	"#ff4500",
+	"#2e8b57",
+	"#daa520",
+	"#d2691e",
+	"#5f9ea0",
+	"#1e90ff",
+	"#ff69b4",
+	"#8a2be2",
+	"#00ff7f"
+]
+
+export const getRandomUsernameColor = (username: string, randomColorsList: Map<string, string>): string => {
+	if (randomColorsList.has(username)) {
+		return randomColorsList.get(username) as string
+	}
+	const color = usernameColors[Math.floor(Math.random() * usernameColors.length)] as string
+	randomColorsList.set(username, color)
+	return color
+}

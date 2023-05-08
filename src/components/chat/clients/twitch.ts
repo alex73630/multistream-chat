@@ -4,30 +4,10 @@ import { EmoteSource, Platform, useChatStore } from "../ChatStore"
 import { parseChatMessage } from "@twurple/common"
 import { useTheme } from "../../../lib/ThemeProvider"
 import { api } from "../../../utils/api"
-import { ensureContrast } from "../chat-utils"
+import { ensureContrast, getRandomUsernameColor } from "../chat-utils"
 
 export const useTwitchChat = (channel: string) => {
 	const { theme } = useTheme()
-	const twitchColors = useMemo(
-		() => [
-			"#ff0000",
-			"#0000ff",
-			"#008000",
-			"#b22222",
-			"#ff7f50",
-			"#9acd32",
-			"#ff4500",
-			"#2e8b57",
-			"#daa520",
-			"#d2691e",
-			"#5f9ea0",
-			"#1e90ff",
-			"#ff69b4",
-			"#8a2be2",
-			"#00ff7f"
-		],
-		[]
-	)
 
 	const [emotes, addEmotes, badges, addBadges] = useChatStore((state) => [
 		state.emotes,
@@ -89,14 +69,9 @@ export const useTwitchChat = (channel: string) => {
 
 	const randomColor = useCallback(
 		(username: string): string => {
-			if (randomColorsList.has(username)) {
-				return randomColorsList.get(username) as string
-			}
-			const color = twitchColors[Math.floor(Math.random() * twitchColors.length)] as string
-			randomColorsList.set(username, color)
-			return color
+			return getRandomUsernameColor(username, randomColorsList)
 		},
-		[randomColorsList, twitchColors]
+		[randomColorsList]
 	)
 
 	const parseEmotes = useCallback(
