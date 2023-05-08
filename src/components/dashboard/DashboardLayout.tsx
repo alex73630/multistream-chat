@@ -34,13 +34,13 @@ export default function DashboardLayout({ navigation, children }: DashboardLayou
 								<div className="flex h-16 justify-between">
 									<div className="flex">
 										<div className="flex flex-shrink-0 items-center">
-											<a
-												href="#"
+											<Link
+												href="/dashboard"
 												className="-m-1.5 rounded p-1.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-600"
 											>
 												<span className="sr-only">Multistream Chat</span>
 												<ChatBubbleLeftRight className="h-10 w-10 text-sky-600" />
-											</a>
+											</Link>
 										</div>
 										<div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
 											{navigation.map((item) => (
@@ -81,7 +81,7 @@ export default function DashboardLayout({ navigation, children }: DashboardLayou
 											</div>
 										</Menu>
 									</div>
-									<div className="-mr-2 flex items-center sm:hidden">
+									<div className="flex items-center sm:hidden">
 										{/* Mobile menu button */}
 										<Disclosure.Button className="inline-flex items-center justify-center rounded-md bg-white dark:bg-slate-800 p-2 text-gray-400 dark:text-slate-200 hover:bg-gray-100 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
 											<span className="sr-only">Open main menu</span>
@@ -98,20 +98,19 @@ export default function DashboardLayout({ navigation, children }: DashboardLayou
 							<Disclosure.Panel className="sm:hidden">
 								<div className="space-y-1 pb-3 pt-2">
 									{navigation.map((item) => (
-										<Disclosure.Button
+										<Link
 											key={item.name}
-											as="a"
 											href={item.href}
 											className={classNames(
 												item.current
 													? 'border-sky-600 bg-sky-50 dark:bg-slate-900 text-sky-700 dark:text-white'
-													: 'border-transparent text-gray-600 dark:text-gray-300 hover:border-gray-300 hover:bg-slate-800',
+													: 'border-transparent text-gray-600 dark:text-gray-300 hover:border-gray-300 hover:bg-sky-50 dark:hover:bg-slate-800',
 												'block border-l-4 py-2 pl-3 pr-4 text-base font-medium'
 											)}
 											aria-current={item.current ? 'page' : undefined}
 										>
 											{item.name}
-										</Disclosure.Button>
+										</Link>
 									))}
 								</div>
 								<div className="border-t border-gray-200 dark:border-slate-700 pb-3 pt-4">

@@ -3,7 +3,8 @@ import DashboardLayout from "~/components/dashboard/DashboardLayout";
 export default function DashboardChat() {
 	const navigation = [
 		{ name: 'Chat', href: '/dashboard', current: true },
-		{ name: 'Youtube', href: '/dashboard/youtube', current: false }
+		{ name: 'Youtube', href: '/dashboard/youtube', current: false },
+		{ name: 'AI', href: '/dashboard/ai', current: false }
 	]
 	return (
 		<DashboardLayout navigation={navigation} >

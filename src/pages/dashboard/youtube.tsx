@@ -4,7 +4,8 @@ import YoutubeGallery from "~/components/dashboard/YoutubeGallery";
 export default function DashboardYoutube() {
 	const navigation = [
 		{ name: 'Chat', href: '/dashboard', current: false },
-		{ name: 'Youtube', href: '/dashboard/youtube', current: true }
+		{ name: 'Youtube', href: '/dashboard/youtube', current: true },
+		{ name: 'AI', href: '/dashboard/ai', current: false }
 	]
 	return (
 		<DashboardLayout navigation={navigation} >
