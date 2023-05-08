@@ -145,17 +145,22 @@ export const useChatStore = create<ChatStore>()((set) => ({
 		}),
 	addEmote: (emote) =>
 		set((state) => {
-			state.emotes.push(emote)
+			if (!state.emotes.some((e) => e.id === emote.id && e.source === emote.source)) {
+				state.emotes.push(emote)
+			}
 			return { emotes: [...state.emotes] }
 		}),
 	addEmotes: (emotes) =>
 		set((state) => {
-			state.emotes.push(...emotes)
+			const toAdd = emotes.filter(
+				(emote) => !state.emotes.some((e) => e.id === emote.id && e.source === emote.source)
+			)
+			state.emotes.push(...toAdd)
 			return { emotes: [...state.emotes] }
 		}),
 	updateEmote: (sourceId, emote) =>
 		set((state) => {
-			const index = state.emotes.findIndex((emote) => emote.id === sourceId)
+			const index = state.emotes.findIndex((e) => e.id === sourceId && e.source === emote.source)
 			if (index !== -1) {
 				state.emotes[index] = emote
 			}
