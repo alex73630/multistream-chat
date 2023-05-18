@@ -36,12 +36,7 @@ export default function ChatMessage({ message, emotes, badges }: ChatMessageProp
 				}
 
 				badgesElems.push(
-					<ChatBadge
-						key={data.id}
-						platform={message.platform}
-						size="small"
-						image={badgeUrl.url}
-					/>
+					<ChatBadge key={data.id} platform={message.platform} size="small" image={badgeUrl.url} />
 				)
 			}
 		}

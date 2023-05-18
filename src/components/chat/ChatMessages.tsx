@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef } from "react"
 import { type Message } from "./ChatStore"
 import dynamic from "next/dynamic"
 import ChatMessage from "./ChatMessage"
+import { cn } from "../../lib/utils"
 
 interface ChatMessageProps {
 	preview?: boolean
@@ -33,7 +34,7 @@ function ChatMessages(props: ChatMessageProps) {
 	}, [autoScroll, props.preview])
 
 	return (
-		<div className="h-screen overflow-hidden p-4" ref={containerRef}>
+		<div className={cn("overflow-hidden p-4", props.preview ? "h-full" : "h-screen")} ref={containerRef}>
 			{(props.preview && props.messages ? props.messages : messages).map((message) => (
 				<ChatMessage key={message.id} message={message} emotes={emotes} badges={badges} />
 			))}

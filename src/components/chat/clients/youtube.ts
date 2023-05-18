@@ -6,7 +6,12 @@ import { getRandomUsernameColor } from "../chat-utils"
 
 export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") => {
 	const [isConnected, setIsConnected] = useState(false)
-	const [emotes, addEmotes, badges, addBadges] = useChatStore((state) => [state.emotes, state.addEmotes, state.badges, state.addBadges])
+	const [emotes, addEmotes, badges, addBadges] = useChatStore((state) => [
+		state.emotes,
+		state.addEmotes,
+		state.badges,
+		state.addBadges
+	])
 	const eventUrl = useMemo(() => {
 		const eventUrl = new URL(`${env.NEXT_PUBLIC_YOUTUBE_SSE_CHAT}/yt-chat`)
 		if (youtubeId === undefined || youtubeId === "undefined") {
@@ -125,7 +130,8 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 
 			return parsedMsgEmotes
 		},
-		[emotes, addEmotes, youtubeChannel])
+		[emotes, addEmotes, youtubeChannel]
+	)
 
 	const parseBadges = useCallback(
 		(message: ChatItem) => {
@@ -181,7 +187,9 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 			}
 
 			if (message.isMembership) {
-				const membershipId = Buffer.from(`${youtubeChannel}-${message.author.badge?.label as string}`).toString("base64")
+				const membershipId = Buffer.from(`${youtubeChannel}-${message.author.badge?.label as string}`).toString(
+					"base64"
+				)
 				const found = badges.find((b) => b.id === membershipId && b.platform === Platform.YouTube)
 				if (!found) {
 					badgesToAdd.push({
@@ -209,53 +217,57 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 				addBadges(badgesToAdd)
 			}
 			return parsedBadges
-		}, [addBadges, badges, youtubeChannel])
+		},
+		[addBadges, badges, youtubeChannel]
+	)
 
+	const handleMessage = useCallback(
+		(event: MessageEvent<string>): void => {
+			try {
+				const parsedData = JSON.parse(event.data) as ChatItem | { connected: boolean }
 
-	const handleMessage = useCallback((event: MessageEvent<string>): void => {
-		try {
-			const parsedData = JSON.parse(event.data) as ChatItem | { connected: boolean }
-
-			if ("connected" in parsedData) {
-				setIsConnected(parsedData.connected)
-			}
-			if (typeof parsedData === "object" && "id" in parsedData) {
-				const msgString = parsedData.message
-					.map((item: MessageItem) => {
-						if ("text" in item) {
-							return item.text
-						}
-						if ("emojiText" in item) {
-							return item.emojiText
-						}
-					})
-					.join(" ")
-
-				addMessage({
-					id: parsedData.id,
-					platform: Platform.YouTube,
-					channel: youtubeChannel,
-					text: msgString,
-					user: {
-						id: parsedData.author.channelId,
-						name: parsedData.author.name,
-						platform: Platform.YouTube,
-						color: randomColor(parsedData.author.channelId),
-						badges: parseBadges(parsedData),
-					},
-					emotes: parseEmotes(parsedData),
-					timestamp: new Date(parsedData.timestamp).getTime()
-				})
-
-				if (parsedData.superchat?.amount) {
-					console.log(parsedData)
+				if ("connected" in parsedData) {
+					setIsConnected(parsedData.connected)
 				}
+				if (typeof parsedData === "object" && "id" in parsedData) {
+					const msgString = parsedData.message
+						.map((item: MessageItem) => {
+							if ("text" in item) {
+								return item.text
+							}
+							if ("emojiText" in item) {
+								return item.emojiText
+							}
+						})
+						.join(" ")
+
+					addMessage({
+						id: parsedData.id,
+						platform: Platform.YouTube,
+						channel: youtubeChannel,
+						text: msgString,
+						user: {
+							id: parsedData.author.channelId,
+							name: parsedData.author.name,
+							platform: Platform.YouTube,
+							color: randomColor(parsedData.author.channelId),
+							badges: parseBadges(parsedData)
+						},
+						emotes: parseEmotes(parsedData),
+						timestamp: new Date(parsedData.timestamp).getTime()
+					})
+
+					if (parsedData.superchat?.amount) {
+						console.log(parsedData)
+					}
+				}
+			} catch (error) {
+				console.error(error)
 			}
-		} catch (error) {
-			console.error(error)
-		}
-		return
-	}, [addMessage, parseEmotes, parseBadges, youtubeChannel, randomColor])
+			return
+		},
+		[addMessage, parseEmotes, parseBadges, youtubeChannel, randomColor]
+	)
 
 	const eventsRef = useRef<EventSource>()
 
