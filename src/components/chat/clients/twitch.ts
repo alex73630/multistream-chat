@@ -1,5 +1,5 @@
 import { ChatClient } from "@twurple/chat"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { EmoteSource, Platform, useChatStore } from "../ChatStore"
 import { parseChatMessage } from "@twurple/common"
 import { useTheme } from "../../../lib/ThemeProvider"
@@ -82,102 +82,110 @@ export const useTwitchChat = (channel: string) => {
 		[randomColorsList]
 	)
 
-	const parseEmotes = useCallback((text: string, emoteOffsets: Map<string, string[]>): { id: string; index: [number, number] }[] => {
-		const msgEmotes: { id: string; index: [number, number] }[] = []
+	const parseEmotes = useCallback(
+		(text: string, emoteOffsets: Map<string, string[]>): { id: string; index: [number, number] }[] => {
+			const msgEmotes: { id: string; index: [number, number] }[] = []
 
-		const twitchEmotes = parseChatMessage(text, emoteOffsets)
+			const twitchEmotes = parseChatMessage(text, emoteOffsets)
 
-		for (const emote of twitchEmotes) {
-			if (emote.type === "emote") {
-				msgEmotes.push({
-					id: emote.id,
-					index: [emote.position, emote.position + emote.length]
-				})
+			for (const emote of twitchEmotes) {
+				if (emote.type === "emote") {
+					msgEmotes.push({
+						id: emote.id,
+						index: [emote.position, emote.position + emote.length]
+					})
 
-				if (!emotes.find((e) => e.id === emote.id && e.platform === Platform.Twitch)) {
-					addEmotes([
-						{
-							id: emote.id,
-							name: emote.name,
-							platform: Platform.Twitch,
-							source: EmoteSource.Twitch,
-							bucket: "channel",
-							channel: null,
-							meta: {
-								zeroWidth: false,
-								isEffect: false
-							},
-							type: "default",
-							url: {
-								x1: {
-									width: 18,
-									height: 18,
-									url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/${theme}/1.0`
+					if (!emotes.find((e) => e.id === emote.id && e.platform === Platform.Twitch)) {
+						addEmotes([
+							{
+								id: emote.id,
+								name: emote.name,
+								platform: Platform.Twitch,
+								source: EmoteSource.Twitch,
+								bucket: "channel",
+								channel: null,
+								meta: {
+									zeroWidth: false,
+									isEffect: false
 								},
-								x2: {
-									width: 36,
-									height: 36,
-									url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/${theme}/2.0`
-								},
-								x4: {
-									width: 72,
-									height: 72,
-									url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/${theme}/3.0`
+								type: "default",
+								url: {
+									x1: {
+										width: 18,
+										height: 18,
+										url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/${theme}/1.0`
+									},
+									x2: {
+										width: 36,
+										height: 36,
+										url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/${theme}/2.0`
+									},
+									x4: {
+										width: 72,
+										height: 72,
+										url: `https://static-cdn.jtvnw.net/emoticons/v2/${emote.id}/default/${theme}/3.0`
+									}
 								}
 							}
+						])
+					}
+				}
+			}
+
+			return msgEmotes
+		},
+		[addEmotes, emotes, theme]
+	)
+
+	const parseBadges = useCallback(
+		(badgesMsg: [string, string][]): string[] => {
+			return badgesMsg
+				.map(([id, version]) => {
+					let badgeId = `${id}-${twitchChannel}-${version}`
+					let badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
+					if (!badge) {
+						badgeId = `${id}-${version}`
+						badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
+						if (!badge) {
+							return null
 						}
-					])
-				}
-			}
-		}
-
-		return msgEmotes
-	}, [addEmotes, emotes, theme])
-
-	const parseBadges = useCallback((badgesMsg: [string, string][]): string[] => {
-		return badgesMsg.map(([id, version]) => {
-			let badgeId = `${id}-${twitchChannel}-${version}`
-			let badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
-			if (!badge) {
-				badgeId = `${id}-${version}`
-				badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
-				if (!badge) {
-					return null
-				}
-			}
-			return badgeId
-		})
-			.filter((b) => b !== null) as string[]
-	}, [badges, twitchChannel])
-
-	const [isConnected, setIsConnected] = useState(false)
+					}
+					return badgeId
+				})
+				.filter((b) => b !== null) as string[]
+		},
+		[badges, twitchChannel]
+	)
 
 	const addMessage = useChatStore((state) => state.addMessage)
 
-	const handleMessages = useCallback((channel: string, user: string, message: string, msg: TwitchPrivateMessage) => {
-		const timestamp = new Date().getTime()
+	const handleMessages = useCallback(
+		(channel: string, user: string, message: string, msg: TwitchPrivateMessage) => {
+			const timestamp = new Date().getTime()
 
-		const userColor =
-			typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
-				? randomColor(user)
-				: msg.userInfo.color
+			const userColor =
+				typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
+					? randomColor(user)
+					: msg.userInfo.color
 
-		addMessage({
-			id: msg.id,
-			platform: Platform.Twitch,
-			channel: channel.slice(1),
-			text: message,
-			user: {
-				id: msg.userInfo.userId,
-				name: msg.userInfo.displayName,
+			addMessage({
+				id: msg.id,
 				platform: Platform.Twitch,
-				color: ensureContrast(userColor, theme === "light" ? "#e9f6fe" : "#10182d"),
-				badges: parseBadges(Array.from(msg.userInfo.badges)),
-			},
-			emotes: parseEmotes(message, msg.emoteOffsets),
-			timestamp: timestamp
-		})
-	}, [addMessage, randomColor, theme, parseBadges, parseEmotes])
+				channel: channel.slice(1),
+				text: message,
+				user: {
+					id: msg.userInfo.userId,
+					name: msg.userInfo.displayName,
+					platform: Platform.Twitch,
+					color: ensureContrast(userColor, theme === "light" ? "#e9f6fe" : "#10182d"),
+					badges: parseBadges(Array.from(msg.userInfo.badges))
+				},
+				emotes: parseEmotes(message, msg.emoteOffsets),
+				timestamp: timestamp
+			})
+		},
+		[addMessage, randomColor, theme, parseBadges, parseEmotes]
+	)
 
 	const clientRef = useRef<ChatClient>()
 	const listenerRef = useRef<Listener>()
@@ -193,13 +201,6 @@ export const useTwitchChat = (channel: string) => {
 			})
 		}
 
-		if (listenerRef.current) {
-			clientRef.current.removeListener(listenerRef.current)
-		}
-		listenerRef.current = clientRef.current.onMessage(
-			handleMessages
-		)
-
 		if (clientRef.current) {
 			const currClient = clientRef.current
 			console.log(currClient.currentChannels, twitchChannel)
@@ -210,13 +211,32 @@ export const useTwitchChat = (channel: string) => {
 			if (!currClient.isConnected && !currClient.isConnecting) {
 				void currClient.connect()
 			}
+		}
+	}, [twitchChannel, clientRef, listenerRef])
 
-			return () => {
-				currClient?.quit()
+	useEffect(() => {
+		if (clientRef.current) {
+			if (listenerRef.current) {
+				clientRef.current.removeListener(listenerRef.current)
+			}
+			listenerRef.current = clientRef.current.onMessage(handleMessages)
+		}
+	}, [handleMessages])
+
+	useEffect(() => {
+		return () => {
+			if (clientRef.current) {
+				clientRef.current.quit()
+				if (listenerRef.current) {
+					clientRef.current.removeListener(listenerRef.current)
+					listenerRef.current = undefined
+				}
+				clientRef.current = undefined
 			}
 		}
+	}, [clientRef])
 
-	}, [twitchChannel, clientRef, listenerRef, handleMessages])
-
-	return { isConnected }
+	return {
+		isConnected: clientRef.current?.isConnected ?? false
+	}
 }

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { type ChatItem, type MessageItem, type YoutubeId } from "youtube-chat/dist/types/data"
 import { type Emote, EmoteSource, Platform, useChatStore, type Badge, BadgeSource } from "../ChatStore"
 import { env } from "../../../env.mjs"
@@ -6,7 +6,12 @@ import { getRandomUsernameColor } from "../chat-utils"
 
 export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") => {
 	const [isConnected, setIsConnected] = useState(false)
-	const [emotes, addEmotes, badges, addBadges] = useChatStore((state) => [state.emotes, state.addEmotes, state.badges, state.addBadges])
+	const [emotes, addEmotes, badges, addBadges] = useChatStore((state) => [
+		state.emotes,
+		state.addEmotes,
+		state.badges,
+		state.addBadges
+	])
 	const eventUrl = useMemo(() => {
 		const eventUrl = new URL(`${env.NEXT_PUBLIC_YOUTUBE_SSE_CHAT}/yt-chat`)
 		if (youtubeId === undefined || youtubeId === "undefined") {
@@ -182,7 +187,9 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 			}
 
 			if (message.isMembership) {
-				const membershipId = Buffer.from(`${youtubeChannel}-${message.author.badge?.label as string}`).toString("base64")
+				const membershipId = Buffer.from(`${youtubeChannel}-${message.author.badge?.label as string}`).toString(
+					"base64"
+				)
 				const found = badges.find((b) => b.id === membershipId && b.platform === Platform.YouTube)
 				if (!found) {
 					badgesToAdd.push({
@@ -210,67 +217,102 @@ export const useYouTubeChat = (youtubeId: YoutubeId | undefined | "undefined") =
 				addBadges(badgesToAdd)
 			}
 			return parsedBadges
-		}, [addBadges, badges, youtubeChannel])
+		},
+		[addBadges, badges, youtubeChannel]
+	)
 
-	const [events, setEvents] = useState<EventSource | null>(() => null)
-	useEffect(() => {
-		let currEvents = events
-		if (eventUrl !== null && !!youtubeChannel) {
-			if (
-				(currEvents === null || currEvents.url !== eventUrl.toString()) &&
-				!eventUrl.toString().includes("handle=undefined")
-			) {
-				if (currEvents !== null) {
-					currEvents.close()
+	const handleMessage = useCallback(
+		(event: MessageEvent<string>): void => {
+			try {
+				const parsedData = JSON.parse(event.data) as ChatItem | { connected: boolean }
+
+				if ("connected" in parsedData) {
+					setIsConnected(parsedData.connected)
 				}
-				currEvents = new EventSource(eventUrl.toString())
-				setEvents(currEvents)
-			}
+				if (typeof parsedData === "object" && "id" in parsedData) {
+					const msgString = parsedData.message
+						.map((item: MessageItem) => {
+							if ("text" in item) {
+								return item.text
+							}
+							if ("emojiText" in item) {
+								return item.emojiText
+							}
+						})
+						.join(" ")
 
-			if (currEvents) {
-				currEvents.onmessage = (event: MessageEvent<string>) => {
-					try {
-						const parsedData = JSON.parse(event.data) as ChatItem | { connected: boolean }
+					addMessage({
+						id: parsedData.id,
+						platform: Platform.YouTube,
+						channel: youtubeChannel,
+						text: msgString,
+						user: {
+							id: parsedData.author.channelId,
+							name: parsedData.author.name,
+							platform: Platform.YouTube,
+							color: randomColor(parsedData.author.channelId),
+							badges: parseBadges(parsedData)
+						},
+						emotes: parseEmotes(parsedData),
+						timestamp: new Date(parsedData.timestamp).getTime()
+					})
 
+					if (parsedData.superchat?.amount) {
 						console.log(parsedData)
-						if ("connected" in parsedData) {
-							setIsConnected(parsedData.connected)
-						}
-						if (typeof parsedData === "object" && "id" in parsedData) {
-							const msgString = parsedData.message
-								.map((item: MessageItem) => {
-									if ("text" in item) {
-										return item.text
-									}
-									if ("emojiText" in item) {
-										return item.emojiText
-									}
-								})
-								.join(" ")
-
-							addMessage({
-								id: parsedData.id,
-								platform: Platform.YouTube,
-								channel: youtubeChannel,
-								text: msgString,
-								user: {
-									id: parsedData.author.channelId,
-									name: parsedData.author.name,
-									platform: Platform.YouTube,
-									color: randomColor(parsedData.author.channelId),
-									badges: parseBadges(parsedData),
-								},
-								emotes: parseEmotes(parsedData),
-								timestamp: new Date(parsedData.timestamp).getTime()
-							})
-						}
-					} catch (error) {
-						console.error(error)
 					}
 				}
+			} catch (error) {
+				console.error(error)
 			}
+			return
+		},
+		[addMessage, parseEmotes, parseBadges, youtubeChannel, randomColor]
+	)
+
+	const eventsRef = useRef<EventSource>()
+
+	const listenerRef = useRef<(e: MessageEvent<string>) => void>()
+
+	useEffect(() => {
+		if (eventUrl === null || !youtubeChannel) {
+			console.log("no event url or channel")
+			return
 		}
-	}, [eventUrl, events, addMessage, youtubeChannel, randomColor, parseEmotes, parseBadges])
+
+		if (eventsRef.current === null || eventsRef.current === undefined) {
+			console.log("creating new event source", eventUrl.toString())
+			eventsRef.current = new EventSource(eventUrl.toString())
+		}
+	}, [eventUrl, youtubeChannel])
+
+	useEffect(() => {
+		if (eventsRef.current === null || eventsRef.current === undefined) {
+			return
+		}
+		if (eventsRef.current) {
+			if (listenerRef.current) {
+				eventsRef.current?.removeEventListener("message", listenerRef.current)
+			}
+			listenerRef.current = (e) => {
+				handleMessage(e)
+			}
+			eventsRef.current.addEventListener("message", listenerRef.current)
+		}
+	}, [handleMessage])
+
+	useEffect(() => {
+		return () => {
+			console.log("closing event source")
+			eventsRef.current?.close()
+
+			if (listenerRef.current) {
+				eventsRef.current?.removeEventListener("message", listenerRef.current)
+				listenerRef.current = undefined
+			}
+
+			eventsRef.current = undefined
+		}
+	}, [])
 
 	return { isConnected }
 }
