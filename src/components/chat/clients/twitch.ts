@@ -1,4 +1,4 @@
-import { ChatClient } from "@twurple/chat"
+import { ChatClient, type UserNotice, type ChatCommunitySubInfo, type ChatSubGiftInfo } from "@twurple/chat"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import { EmoteSource, Platform, useChatStore } from "../ChatStore"
 import { parseChatMessage } from "@twurple/common"
@@ -8,7 +8,7 @@ import { ensureContrast, getRandomUsernameColor } from "../chat-utils"
 import { type TwitchPrivateMessage } from "@twurple/chat/lib/commands/TwitchPrivateMessage"
 import { type Listener } from "@d-fischer/typed-event-emitter/lib"
 
-export const useTwitchChat = (channel: string) => {
+export const useTwitchChat = (channel: string | undefined) => {
 	const { theme } = useTheme()
 
 	const twitchChannel = useMemo(() => channel, [channel])
@@ -32,7 +32,7 @@ export const useTwitchChat = (channel: string) => {
 	}, [globalBadges, addBadges])
 
 	const { data: channelBadges } = api.twitch.getChannelBadges.useQuery(
-		{ channel },
+		{ channel: twitchChannel ?? "" },
 		{
 			staleTime: Infinity,
 			enabled: !!channel
@@ -60,7 +60,7 @@ export const useTwitchChat = (channel: string) => {
 	}, [globalEmotes, addEmotes])
 
 	const { data: channelEmotes } = api.twitch.getChannelEmotes.useQuery(
-		{ channel, theme },
+		{ channel: twitchChannel ?? "", theme },
 		{
 			staleTime: Infinity,
 			enabled: !!channel
@@ -83,8 +83,16 @@ export const useTwitchChat = (channel: string) => {
 	)
 
 	const parseEmotes = useCallback(
-		(text: string, emoteOffsets: Map<string, string[]>): { id: string; index: [number, number] }[] => {
+		(
+			text: string,
+			emoteOffsets: Map<string, string[]>
+		): [{ id: string; index: [number, number] }[], { id: string; amount: number; index: [number, number] }[]] => {
 			const msgEmotes: { id: string; index: [number, number] }[] = []
+			const msgCheermote: {
+				id: string
+				amount: number
+				index: [number, number]
+			}[] = []
 
 			const twitchEmotes = parseChatMessage(text, emoteOffsets)
 
@@ -130,9 +138,16 @@ export const useTwitchChat = (channel: string) => {
 						])
 					}
 				}
+				if (emote.type === "cheer") {
+					msgCheermote.push({
+						id: emote.name,
+						amount: emote.amount,
+						index: [emote.position, emote.position + emote.length]
+					})
+				}
 			}
 
-			return msgEmotes
+			return [msgEmotes, msgCheermote]
 		},
 		[addEmotes, emotes, theme]
 	)
@@ -141,7 +156,7 @@ export const useTwitchChat = (channel: string) => {
 		(badgesMsg: [string, string][]): string[] => {
 			return badgesMsg
 				.map(([id, version]) => {
-					let badgeId = `${id}-${twitchChannel}-${version}`
+					let badgeId = `${id}-${twitchChannel ?? ""}-${version}`
 					let badge = badges.find((b) => b.id === badgeId && b.platform === Platform.Twitch)
 					if (!badge) {
 						badgeId = `${id}-${version}`
@@ -163,10 +178,14 @@ export const useTwitchChat = (channel: string) => {
 		(channel: string, user: string, message: string, msg: TwitchPrivateMessage) => {
 			const timestamp = new Date().getTime()
 
+			console.log(user, message, msg)
+
 			const userColor =
 				typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
 					? randomColor(user)
 					: msg.userInfo.color
+
+			const [parsedEmotes, parsedCheermotes] = parseEmotes(message, msg.emoteOffsets)
 
 			addMessage({
 				id: msg.id,
@@ -180,15 +199,150 @@ export const useTwitchChat = (channel: string) => {
 					color: ensureContrast(userColor, theme === "light" ? "#e9f6fe" : "#10182d"),
 					badges: parseBadges(Array.from(msg.userInfo.badges))
 				},
-				emotes: parseEmotes(message, msg.emoteOffsets),
+				emotes: parsedEmotes,
+				...(parsedCheermotes.length > 0
+					? {
+							cheermotes: parsedCheermotes,
+							event: {
+								type: "donation"
+							}
+					  }
+					: {}),
 				timestamp: timestamp
 			})
 		},
 		[addMessage, randomColor, theme, parseBadges, parseEmotes]
 	)
 
+	const deleteMessage = useChatStore((state) => state.deleteMessage)
+
+	const handleMessageDeletion = useCallback(
+		(channel: string, messageId: string) => {
+			deleteMessage(messageId)
+		},
+		[deleteMessage]
+	)
+
+	const deleteUserMessages = useChatStore((state) => state.deleteUserMessages)
+
+	const handleUserMessageDeletion = useCallback(
+		(channel: string, user: string) => {
+			deleteUserMessages(user, Platform.Twitch)
+		},
+		[deleteUserMessages]
+	)
+
+	const clearMessages = useChatStore((state) => state.clearMessages)
+
+	const handleClearMessages = useCallback(() => {
+		clearMessages(Platform.Twitch)
+	}, [clearMessages])
+
+	const giftCounts = useMemo(() => new Map<string | undefined, number>(), [])
+
+	const handleGiftSubs = useCallback(
+		(channel: string, user: string, subInfo: ChatCommunitySubInfo, msg: UserNotice) => {
+			const timestamp = new Date().getTime()
+
+			const userColor =
+				typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
+					? randomColor(user)
+					: msg.userInfo.color
+
+			const previousGiftCount = giftCounts.get(user) ?? 0
+			giftCounts.set(user, previousGiftCount + subInfo.count)
+
+			const message = `${msg.userInfo.displayName} is gifting ${subInfo.count} subs!${
+				subInfo.gifterGiftCount && subInfo.gifterGiftCount > 0
+					? ` They've gifted ${subInfo.gifterGiftCount} subs to the channel!`
+					: ""
+			}`
+
+			addMessage({
+				id: `${Platform.Twitch}-${channel}-${timestamp}`,
+				platform: Platform.Twitch,
+				channel: channel.slice(1),
+				text: message,
+				user: {
+					id: msg.userInfo.userId,
+					name: msg.userInfo.displayName,
+					platform: Platform.Twitch,
+					color: ensureContrast(userColor, theme === "light" ? "#e9f6fe" : "#10182d"),
+					badges: parseBadges(Array.from(msg.userInfo.badges))
+				},
+				emotes: [],
+				event: {
+					type: "gift",
+					highlightColor: "#ff0000"
+				},
+				timestamp: timestamp
+			})
+		},
+		[addMessage, randomColor, theme, giftCounts, parseBadges]
+	)
+
+	const handleGiftSub = useCallback(
+		(channel: string, recipient: string, subInfo: ChatSubGiftInfo, msg: UserNotice) => {
+			const user = subInfo.gifter
+			const previousGiftCount = giftCounts.get(user) ?? 0
+
+			if (previousGiftCount > 0) {
+				giftCounts.set(user, previousGiftCount - 1)
+			} else {
+				const timestamp = new Date().getTime()
+
+				const userColor =
+					typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
+						? randomColor(msg.userInfo.userName)
+						: msg.userInfo.color
+
+				const tier =
+					subInfo.plan === "1000"
+						? " Tier 1 "
+						: subInfo.plan === "2000"
+						? " Tier 2 "
+						: subInfo.plan === "3000"
+						? " Tier 3 "
+						: " "
+
+				const message = `${msg.userInfo.displayName} gifted a${tier}sub to ${recipient}!${
+					subInfo.gifterGiftCount && subInfo.gifterGiftCount > 0
+						? ` They've gifted ${subInfo.gifterGiftCount} subs to the channel!`
+						: ""
+				}`
+
+				addMessage({
+					id: `${Platform.Twitch}-${channel}-${timestamp}`,
+					platform: Platform.Twitch,
+					channel: channel.slice(1),
+					text: message,
+					user: {
+						id: msg.userInfo.userId,
+						name: msg.userInfo.displayName,
+						platform: Platform.Twitch,
+						color: ensureContrast(userColor, theme === "light" ? "#e9f6fe" : "#10182d"),
+						badges: parseBadges(Array.from(msg.userInfo.badges))
+					},
+					emotes: [],
+					event: {
+						type: "gift",
+						highlightColor: "#ff0000"
+					},
+					timestamp: timestamp
+				})
+			}
+		},
+		[addMessage, randomColor, theme, giftCounts, parseBadges]
+	)
+
 	const clientRef = useRef<ChatClient>()
-	const listenerRef = useRef<Listener>()
+	const onMessageListenerRef = useRef<Listener>()
+	const onMessageDeletionListenerRef = useRef<Listener>()
+	const onUserTimeoutListenerRef = useRef<Listener>()
+	const onUserBanListenerRef = useRef<Listener>()
+	const onClearMessagesListenerRef = useRef<Listener>()
+	const onGiftSubsListenerRef = useRef<Listener>()
+	const onGiftSubListenerRef = useRef<Listener>()
 
 	useEffect(() => {
 		if (typeof window === "undefined" || !twitchChannel || typeof twitchChannel === "undefined") return
@@ -212,25 +366,94 @@ export const useTwitchChat = (channel: string) => {
 				void currClient.connect()
 			}
 		}
-	}, [twitchChannel, clientRef, listenerRef])
+	}, [twitchChannel, clientRef])
 
 	useEffect(() => {
 		if (clientRef.current) {
-			if (listenerRef.current) {
-				clientRef.current.removeListener(listenerRef.current)
+			if (onMessageListenerRef.current) {
+				clientRef.current.removeListener(onMessageListenerRef.current)
 			}
-			listenerRef.current = clientRef.current.onMessage(handleMessages)
+			onMessageListenerRef.current = clientRef.current.onMessage(handleMessages)
+
+			if (onMessageDeletionListenerRef.current) {
+				clientRef.current.removeListener(onMessageDeletionListenerRef.current)
+			}
+			onMessageDeletionListenerRef.current = clientRef.current.onMessageRemove(handleMessageDeletion)
+
+			if (onUserTimeoutListenerRef.current) {
+				clientRef.current.removeListener(onUserTimeoutListenerRef.current)
+			}
+			onUserTimeoutListenerRef.current = clientRef.current.onTimeout(handleUserMessageDeletion)
+
+			if (onUserBanListenerRef.current) {
+				clientRef.current.removeListener(onUserBanListenerRef.current)
+			}
+			onUserBanListenerRef.current = clientRef.current.onBan(handleUserMessageDeletion)
+
+			if (onClearMessagesListenerRef.current) {
+				clientRef.current.removeListener(onClearMessagesListenerRef.current)
+			}
+			onClearMessagesListenerRef.current = clientRef.current.onChatClear(handleClearMessages)
+
+			if (onGiftSubsListenerRef.current) {
+				clientRef.current.removeListener(onGiftSubsListenerRef.current)
+			}
+			onGiftSubsListenerRef.current = clientRef.current.onCommunitySub(handleGiftSubs)
+
+			if (onGiftSubListenerRef.current) {
+				clientRef.current.removeListener(onGiftSubListenerRef.current)
+			}
+			onGiftSubListenerRef.current = clientRef.current.onSubGift(handleGiftSub)
 		}
-	}, [handleMessages])
+	}, [
+		clientRef,
+		handleMessages,
+		handleMessageDeletion,
+		handleUserMessageDeletion,
+		handleClearMessages,
+		handleGiftSubs,
+		handleGiftSub
+	])
 
 	useEffect(() => {
 		return () => {
 			if (clientRef.current) {
 				clientRef.current.quit()
-				if (listenerRef.current) {
-					clientRef.current.removeListener(listenerRef.current)
-					listenerRef.current = undefined
+				if (onMessageListenerRef.current) {
+					clientRef.current.removeListener(onMessageListenerRef.current)
+					onMessageListenerRef.current = undefined
 				}
+
+				if (onMessageDeletionListenerRef.current) {
+					clientRef.current.removeListener(onMessageDeletionListenerRef.current)
+					onMessageDeletionListenerRef.current = undefined
+				}
+
+				if (onUserTimeoutListenerRef.current) {
+					clientRef.current.removeListener(onUserTimeoutListenerRef.current)
+					onUserTimeoutListenerRef.current = undefined
+				}
+
+				if (onUserBanListenerRef.current) {
+					clientRef.current.removeListener(onUserBanListenerRef.current)
+					onUserBanListenerRef.current = undefined
+				}
+
+				if (onClearMessagesListenerRef.current) {
+					clientRef.current.removeListener(onClearMessagesListenerRef.current)
+					onClearMessagesListenerRef.current = undefined
+				}
+
+				if (onGiftSubsListenerRef.current) {
+					clientRef.current.removeListener(onGiftSubsListenerRef.current)
+					onGiftSubsListenerRef.current = undefined
+				}
+
+				if (onGiftSubListenerRef.current) {
+					clientRef.current.removeListener(onGiftSubListenerRef.current)
+					onGiftSubListenerRef.current = undefined
+				}
+
 				clientRef.current = undefined
 			}
 		}

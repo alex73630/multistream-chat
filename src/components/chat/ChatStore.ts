@@ -41,7 +41,21 @@ export interface Message {
 		id: string
 		index: [number, number]
 	}[]
+	cheermotes?: {
+		id: string
+		amount: number
+		index: [number, number]
+	}[]
+	superchat?: {
+		amount: string
+		color: string
+		sticker?: string
+	}
 	text: string
+	event?: {
+		type: "subscription" | "gift" | "raid" | "donation" | "announcement" | "slash-me" | "reply" | "badge-upgrade"
+		highlightColor?: string
+	}
 }
 
 export interface Emote {
@@ -75,6 +89,50 @@ export interface Emote {
 	}
 }
 
+export interface Cheermote {
+	id: string
+	prefix: string
+	minBits: number
+	color: string
+	images: {
+		dark: {
+			animated: {
+				"1": string
+				"1.5": string
+				"2": string
+				"3": string
+				"4": string
+			}
+			static: {
+				"1": string
+				"1.5": string
+				"2": string
+				"3": string
+				"4": string
+			}
+		}
+		light: {
+			animated: {
+				"1": string
+				"1.5": string
+				"2": string
+				"3": string
+				"4": string
+			}
+			static: {
+				"1": string
+				"1.5": string
+				"2": string
+				"3": string
+				"4": string
+			}
+		}
+	}
+	platform: Platform.Twitch
+	bucket: "global" | "channel"
+	channel: string | null
+}
+
 export interface Badge {
 	id: string
 	setId?: string
@@ -106,20 +164,25 @@ export interface ChatStore {
 	messages: Message[]
 	badges: Badge[]
 	emotes: Emote[]
+	cheermotes: Cheermote[]
 	addMessage: (message: Message) => void
 	deleteMessage: (id: string) => void
-	clearMessages: () => void
+	deleteUserMessages: (userId: string, platform: Platform) => void
+	clearMessages: (platform?: Platform) => void
 	addBadge: (badge: Badge) => void
 	addBadges: (badges: Badge[]) => void
 	addEmote: (emote: Emote) => void
 	addEmotes: (emotes: Emote[]) => void
 	updateEmote: (sourceId: string, emote: Emote) => void
+	addCheermote: (cheermote: Cheermote) => void
+	addCheermotes: (cheermotes: Cheermote[]) => void
 }
 
 export const useChatStore = create<ChatStore>()((set) => ({
 	messages: [],
 	badges: [],
 	emotes: [],
+	cheermotes: [],
 	addMessage: (message) =>
 		set((state) => {
 			if (state.messages.some((m) => m.id === message.id)) {
@@ -135,7 +198,22 @@ export const useChatStore = create<ChatStore>()((set) => ({
 			state.messages = state.messages.filter((message) => message.id !== id)
 			return { messages: [...state.messages] }
 		}),
-	clearMessages: () => set(() => ({ messages: [] })),
+	deleteUserMessages: (userId, platform) =>
+		set((state) => {
+			state.messages = state.messages.filter(
+				(message) => message.user.id !== userId && message.platform !== platform
+			)
+			return { messages: [...state.messages] }
+		}),
+	clearMessages: (platform) =>
+		set((state) => {
+			if (platform) {
+				state.messages = state.messages.filter((message) => message.platform !== platform)
+			} else {
+				state.messages = []
+			}
+			return { messages: [...state.messages] }
+		}),
 	addBadge: (badge) =>
 		set((state) => {
 			if (!state.badges.some((b) => b.id === badge.id && b.source === badge.source)) {
@@ -173,5 +251,18 @@ export const useChatStore = create<ChatStore>()((set) => ({
 				state.emotes[index] = emote
 			}
 			return { emotes: [...state.emotes] }
+		}),
+	addCheermote: (cheermote) =>
+		set((state) => {
+			if (!state.cheermotes.some((c) => c.id === cheermote.id)) {
+				state.cheermotes.push(cheermote)
+			}
+			return { cheermotes: [...state.cheermotes] }
+		}),
+	addCheermotes: (cheermotes) =>
+		set((state) => {
+			const toAdd = cheermotes.filter((cheermote) => !state.cheermotes.some((c) => c.id === cheermote.id))
+			state.cheermotes.push(...toAdd)
+			return { cheermotes: [...state.cheermotes] }
 		})
 }))

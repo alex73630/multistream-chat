@@ -1,34 +1,30 @@
-import { useRouter } from "next/router"
 import { useTwitchChat } from "./clients/twitch"
 import { useYouTubeChat } from "./clients/youtube"
 import dynamic from "next/dynamic"
-import { useEffect, useMemo } from "react"
+import { useEffect } from "react"
 import ChatMessages from "./ChatMessages"
 
-function ChatComponent() {
-	const router = useRouter()
-	const config = useMemo(() => {
-		const { theme, overlay, youtube, twitch } = router.query
-		return {
-			theme: theme as string,
-			overlay: overlay === "true",
-			youtube: youtube as string,
-			twitch: twitch as string
-		}
-	}, [router.query])
-	useYouTubeChat({ handle: config.youtube })
+interface ChatComponentProps {
+	theme?: string
+	overlay?: boolean
+	youtube?: string
+	twitch?: string
+}
+
+function ChatComponent(config: ChatComponentProps) {
+	useYouTubeChat(config.youtube ? { handle: config.youtube } : undefined)
 	useTwitchChat(config.twitch)
 
 	useEffect(() => {
-		if (router.query.overlay === "true") {
+		if (config.overlay === true) {
 			const bgClasses = Array.from(document.body.classList).filter((c) => c.includes("bg-"))
 			bgClasses.forEach((c) => document.body.classList.remove(c))
 
 			document.body.classList.add("bg-transparent")
 		}
-	}, [router.query])
+	}, [config.overlay])
 
-	if (typeof router.query.youtube !== "string" && typeof router.query.twitch !== "string") {
+	if (typeof config.youtube !== "string" && typeof config.twitch !== "string") {
 		return <div>No chat provider setup</div>
 	}
 
