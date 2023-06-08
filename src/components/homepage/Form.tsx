@@ -6,6 +6,7 @@ import ChatMessages from "../chat/ChatMessages"
 import { type Message, Platform } from "../chat/ChatStore"
 import FormButton from "../form/FormButton"
 import FormToggle from "../form/FormToggle"
+import { type ChatConfig, getInitialChatConfig } from "../chat/chat-config"
 
 interface GeneratedState {
 	overlay: string
@@ -74,6 +75,8 @@ export default function Form() {
 		{ label: "Inter", value: "inter" },
 		{ label: "Poppins", value: "poppins" }
 	]
+
+	const [config, setConfig] = useState<ChatConfig>(getInitialChatConfig())
 
 	return (
 		<div className="mb-32 grid w-full max-w-7xl items-stretch gap-8 py-16 sm:px-8 lg:grid-cols-3">
@@ -147,7 +150,7 @@ export default function Form() {
 						"h-full w-full overflow-hidden bg-white shadow dark:border dark:border-slate-700 dark:bg-slate-900 sm:rounded-lg"
 					}
 				>
-					<ChatMessages preview={true} messages={previewMessages} />
+					<ChatMessages config={config} preview={true} messages={previewMessages} />
 				</div>
 			</div>
 		</div>

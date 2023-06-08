@@ -201,7 +201,7 @@ export const useChatStore = create<ChatStore>()((set) => ({
 	deleteUserMessages: (userId, platform) =>
 		set((state) => {
 			state.messages = state.messages.filter(
-				(message) => message.user.id !== userId && message.platform !== platform
+				(message) => !(message.user.id === userId && message.platform === platform)
 			)
 			return { messages: [...state.messages] }
 		}),

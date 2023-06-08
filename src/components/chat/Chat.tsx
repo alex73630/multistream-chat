@@ -1,17 +1,12 @@
 import { useTwitchChat } from "./clients/twitch"
 import { useYouTubeChat } from "./clients/youtube"
 import dynamic from "next/dynamic"
-import { useEffect } from "react"
+import { useEffect, useMemo } from "react"
 import ChatMessages from "./ChatMessages"
+import { Platform } from "./ChatStore"
+import { type ChatConfig } from "./chat-config"
 
-interface ChatComponentProps {
-	theme?: string
-	overlay?: boolean
-	youtube?: string
-	twitch?: string
-}
-
-function ChatComponent(config: ChatComponentProps) {
+function ChatComponent(config: ChatConfig) {
 	useYouTubeChat(config.youtube ? { handle: config.youtube } : undefined)
 	useTwitchChat(config.twitch)
 
@@ -24,13 +19,27 @@ function ChatComponent(config: ChatComponentProps) {
 		}
 	}, [config.overlay])
 
+	const activePlatforms = useMemo(() => {
+		const platforms: Platform[] = []
+
+		if (typeof config.twitch === "string") {
+			platforms.push(Platform.Twitch)
+		}
+
+		if (typeof config.youtube === "string") {
+			platforms.push(Platform.YouTube)
+		}
+
+		return platforms
+	}, [config.twitch, config.youtube])
+
 	if (typeof config.youtube !== "string" && typeof config.twitch !== "string") {
 		return <div>No chat provider setup</div>
 	}
 
 	return (
 		<div className={"flex h-screen w-screen flex-col"}>
-			<ChatMessages />
+			<ChatMessages config={config} activePlatforms={activePlatforms} />
 		</div>
 	)
 }

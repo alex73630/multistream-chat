@@ -178,8 +178,6 @@ export const useTwitchChat = (channel: string | undefined) => {
 		(channel: string, user: string, message: string, msg: TwitchPrivateMessage) => {
 			const timestamp = new Date().getTime()
 
-			console.log(user, message, msg)
-
 			const userColor =
 				typeof msg.userInfo.color === "undefined" || msg.userInfo.color === ""
 					? randomColor(user)
