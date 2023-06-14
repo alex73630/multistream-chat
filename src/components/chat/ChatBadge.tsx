@@ -3,6 +3,7 @@ import { Platform } from "./ChatStore"
 import { useMemo } from "react"
 import TwBadge from "~/images/twitch-icon-square.svg"
 import YtBadge from "~/images/yt-icon-square.svg"
+import { cn } from "../../lib/utils"
 
 interface BadgeProps {
 	size: "small" | "medium" | "large"
@@ -32,6 +33,31 @@ export default function ChatBadge(props: Props) {
 		}
 	}, [props.size])
 
+	const chatSize = useMemo(() => {
+		switch (props.size) {
+			case "small":
+				return {
+					maxLineHeight: "max-h-6"
+				}
+			case "medium":
+				return {
+					maxLineHeight: "max-h-8"
+				}
+			case "large":
+				return {
+					maxLineHeight: "max-h-10"
+				}
+			default:
+				return {
+					maxLineHeight: "max-h-6"
+				}
+		}
+	}, [props.size])
+
+	const badgeClasses = useMemo(() => {
+		return cn("mr-1 inline h-auto w-auto min-w-[1.5rem] rounded", chatSize.maxLineHeight)
+	}, [chatSize])
+
 	if ("image" in props) {
 		return (
 			<Image
@@ -40,7 +66,7 @@ export default function ChatBadge(props: Props) {
 				alt="Chat Badge"
 				height={calculatedSize}
 				width={calculatedSize}
-				className="mr-1 inline h-auto max-h-6 w-auto rounded"
+				className={badgeClasses}
 			/>
 		)
 	}
@@ -54,7 +80,7 @@ export default function ChatBadge(props: Props) {
 					alt="Twitch Chat Badge"
 					height={calculatedSize}
 					width={calculatedSize}
-					className="mr-1 inline h-auto max-h-6 w-auto rounded"
+					className={badgeClasses}
 				/>
 			)
 		case Platform.YouTube:
@@ -65,7 +91,7 @@ export default function ChatBadge(props: Props) {
 					alt="YouTube Chat Badge"
 					height={calculatedSize}
 					width={calculatedSize}
-					className="mr-1 inline h-auto max-h-6 w-auto rounded"
+					className={badgeClasses}
 				/>
 			)
 	}
