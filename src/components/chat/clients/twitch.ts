@@ -1,11 +1,16 @@
-import { ChatClient, type UserNotice, type ChatCommunitySubInfo, type ChatSubGiftInfo } from "@twurple/chat"
+import {
+	ChatClient,
+	type UserNotice,
+	type ChatCommunitySubInfo,
+	type ChatSubGiftInfo,
+	parseChatMessage,
+	type ChatMessage
+} from "@twurple/chat"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import { EmoteSource, Platform, useChatStore } from "../ChatStore"
-import { parseChatMessage } from "@twurple/common"
 import { useTheme } from "../../../lib/ThemeProvider"
 import { api } from "../../../utils/api"
 import { ensureContrast, getRandomUsernameColor } from "../chat-utils"
-import { type TwitchPrivateMessage } from "@twurple/chat/lib/commands/TwitchPrivateMessage"
 import { type Listener } from "@d-fischer/typed-event-emitter/lib"
 
 export const useTwitchChat = (channel: string | undefined) => {
@@ -175,7 +180,7 @@ export const useTwitchChat = (channel: string | undefined) => {
 	const addMessage = useChatStore((state) => state.addMessage)
 
 	const handleMessages = useCallback(
-		(channel: string, user: string, message: string, msg: TwitchPrivateMessage) => {
+		(channel: string, user: string, message: string, msg: ChatMessage) => {
 			const timestamp = new Date().getTime()
 
 			const userColor =
@@ -188,7 +193,7 @@ export const useTwitchChat = (channel: string | undefined) => {
 			addMessage({
 				id: msg.id,
 				platform: Platform.Twitch,
-				channel: channel.slice(1),
+				channel,
 				text: message,
 				user: {
 					id: msg.userInfo.userId,
@@ -259,7 +264,7 @@ export const useTwitchChat = (channel: string | undefined) => {
 			addMessage({
 				id: `${Platform.Twitch}-${channel}-${timestamp}`,
 				platform: Platform.Twitch,
-				channel: channel.slice(1),
+				channel,
 				text: message,
 				user: {
 					id: msg.userInfo.userId,
@@ -312,7 +317,7 @@ export const useTwitchChat = (channel: string | undefined) => {
 				addMessage({
 					id: `${Platform.Twitch}-${channel}-${timestamp}`,
 					platform: Platform.Twitch,
-					channel: channel.slice(1),
+					channel,
 					text: message,
 					user: {
 						id: msg.userInfo.userId,

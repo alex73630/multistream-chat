@@ -76,7 +76,7 @@ export default function Form() {
 		{ label: "Poppins", value: "poppins" }
 	]
 
-	const [config, setConfig] = useState<ChatConfig>(getInitialChatConfig())
+	const [config] = useState<ChatConfig>(getInitialChatConfig())
 
 	return (
 		<div className="mb-32 grid w-full max-w-7xl items-stretch gap-8 py-16 sm:px-8 lg:grid-cols-3">
